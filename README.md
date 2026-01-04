@@ -67,10 +67,9 @@ We ran this benchmark on Android with a list of **2,000 items**. The results wer
 > Note the `Views: 609` count.
 
 #### Video Comparison
-<div align="center">
-  <iframe src="https://drive.google.com/file/d/1JdfnuRMOaKTQxAujge7GqM0NH97iFkeT/preview" width="640" height="480" allow="autoplay"></iframe>
-</div>
+**📹 [Watch the full performance comparison video on Google Drive](https://drive.google.com/file/d/1JdfnuRMOaKTQxAujge7GqM0NH97iFkeT/view?usp=sharing)**
 
+> Click the link above to see a side-by-side video demonstration of the performance difference between Heavy (View-based) and Optimized (Virtual-based) implementations.
 
 ## 🛠 Architectural Solution
 
