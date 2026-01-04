@@ -41,3 +41,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Large video files (use Google Drive links instead)
+assets/images/comparison.mov
+*.mov

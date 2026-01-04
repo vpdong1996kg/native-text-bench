@@ -66,6 +66,12 @@ We ran this benchmark on Android with a list of **2,000 items**. The results wer
 ![Optimized Mode Results](./assets/images/optimize-endof-list.png)
 > Note the `Views: 609` count.
 
+#### Video Comparison
+<div align="center">
+  <iframe src="https://drive.google.com/file/d/1JdfnuRMOaKTQxAujge7GqM0NH97iFkeT/preview" width="640" height="480" allow="autoplay"></iframe>
+</div>
+
+
 ## 🛠 Architectural Solution
 
 To fix layout issues and solve this performance bottleneck, we use a **Context-based Wrapper**:
