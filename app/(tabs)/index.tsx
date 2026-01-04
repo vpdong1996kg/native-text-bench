@@ -1,98 +1,116 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import {
+  FlatList,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+// @ts-ignore
+import { NativeText, NativeVirtualText } from 'react-native/Libraries/Text/TextNativeComponent';
+
+const ITEM_COUNT = 2000;
+const DATA = Array.from({ length: ITEM_COUNT }, (_, i) => ({ id: i.toString() }));
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [useOptimized, setUseOptimized] = useState(true);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={[styles.button, !useOptimized && styles.activeButton]} 
+          onPress={() => setUseOptimized(false)}
+        >
+          <Text style={styles.btnText}>Scenario A: HEAVY (Views)</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={[styles.button, useOptimized && styles.activeButton]} 
+          onPress={() => setUseOptimized(true)}
+        >
+          <Text style={styles.btnText}>Scenario B: LIGHT (Virtual)</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.infoBox}>
+        <Text>Mode: {useOptimized ? "Optimized (Virtual Nodes)" : "Heavy (Native Views)"}</Text>
+        <Text>Items: {ITEM_COUNT}</Text>
+      </View>
+
+      <FlatList
+        data={DATA}
+        key={useOptimized ? 'optimized' : 'heavy'} // Force re-mount when switching
+        renderItem={({ item }) => (
+          useOptimized ? <LightItem index={item.id} /> : <HeavyItem index={item.id} />
+        )}
+        keyExtractor={item => item.id}
+      />
+    </SafeAreaView>
   );
 }
 
+// --- SCENARIO A: THE "BAD" WAY (NativeText everywhere) ---
+// Every single text line here creates a UIView / TextView.
+// Fabric sees: View -> View -> View -> View
+const HeavyItem = ({ index }: { index: string }) => (
+  <View style={styles.row}>
+    <NativeText style={styles.iconBox}>icon</NativeText>
+    <View style={styles.textContainer}>
+      <NativeText style={styles.title}>Title #{index}</NativeText>
+      <NativeText style={styles.description}>
+        This is a description that uses a separate Native View.
+      </NativeText>
+      <NativeText style={styles.tag}>Tag View</NativeText>
+    </View>
+  </View>
+);
+
+// --- SCENARIO B: THE "GOOD" WAY (NativeVirtualText) ---
+// Only the Parent (NativeText) creates a UIView / TextView.
+// The children are Virtual Nodes (C++) that merge into the parent.
+// Fabric sees: View -> (Text Content)
+const LightItem = ({ index }: { index: string }) => (
+  <View style={styles.row}>
+    <NativeText style={styles.iconBox}>icon</NativeText> 
+    
+    <View style={styles.textContainer}>
+      <NativeText style={styles.virtualContainer}>
+        <NativeVirtualText style={styles.title}>Title #{index}</NativeVirtualText>
+        {"\n"}
+        <NativeVirtualText style={styles.description}>
+           This is a description that merges into the parent text node.
+        </NativeVirtualText>
+        {"\n"}
+        <NativeVirtualText style={styles.tag}>Tag Span</NativeVirtualText>
+      </NativeText>
+    </View>
+  </View>
+);
+
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: { flex: 1, backgroundColor: '#f0f0f0' },
+  header: { flexDirection: 'row', padding: 10, justifyContent: 'space-between' },
+  button: { padding: 15, backgroundColor: '#ddd', borderRadius: 8, flex: 1, marginHorizontal: 5, alignItems: 'center' },
+  activeButton: { backgroundColor: '#4CAF50' },
+  btnText: { fontWeight: 'bold' },
+  infoBox: { padding: 10, alignItems: 'center', marginBottom: 5 },
+  row: { 
+    flexDirection: 'row', 
+    padding: 10, 
+    borderBottomWidth: 1, 
+    borderColor: '#ccc', 
+    backgroundColor: 'white',
+    height: 80
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  iconBox: { width: 50, height: 50, backgroundColor: '#eee', marginRight: 10 },
+  textContainer: { flex: 1 },
+  // Styles for Heavy (Blocks)
+  title: { fontWeight: 'bold', fontSize: 16 },
+  description: { color: '#666' },
+  tag: { color: 'blue', fontSize: 12 },
+  // Styles for Light (Virtual)
+  virtualContainer: { flex: 1 } 
 });
